@@ -12,6 +12,7 @@ project_files:
   - web-build/Dockerfile.claude
   - commands/web/claude
   - config.claude.yaml
+  - claude-plugins.example.json
 
 # List of files and directories that are copied into the global .ddev directory.
 global_files: []
@@ -49,6 +50,7 @@ post_install_actions:
     echo "Claude Code add-on installed."
     echo "1. On the host run 'claude setup-token' and export CLAUDE_CODE_OAUTH_TOKEN in your shell."
     echo "2. Run 'ddev restart', then 'ddev claude' to start Claude Code in the web container."
+    echo "3. Optional: copy '.ddev/claude-plugins.example.json' to '.ddev/claude-plugins.json' to customize the installed marketplaces/plugins."
 
 # removal_actions are executed in the context of the target project's .ddev directory.
 removal_actions:
