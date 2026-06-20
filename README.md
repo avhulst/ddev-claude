@@ -103,7 +103,7 @@ If you use Claude Code plugins, cache them once after install:
 * **`commands/web/claude`** — the `ddev claude` wrapper command. It runs `claude "$@"` inside the web container.
 * **`config.claude.yaml`** — a `post-start` hook that:
   * Persists Claude's auth and state in DDEV's **global cache volume** (`/mnt/ddev-global-cache/claude-code/shared`). This survives `ddev restart`, `ddev rebuild`, `ddev poweroff` and even `ddev delete`, stays out of Mutagen sync, and never lands in git. The login is **shared across all your projects** by default.
-  * Installs the official Claude Code plugins (`context7`, `php-lsp`, `code-simplifier`, `code-review`, `security-guidance`) from the `claude-plugins-official` marketplace, idempotently.
+  * Installs the official Claude Code plugins (`context7`, `php-lsp`, `code-simplifier`, `code-review`, `security-guidance`) from the `claude-plugins-official` marketplace, idempotently. You can override this list per project with a `.ddev/claude-plugins.json` file (see below).
 * **`config.token.local.yaml`** — created on install (gitignored), forwards your OAuth token into the container.
 
 > [!TIP]
@@ -129,8 +129,35 @@ The image source lives in this repo under [`claude-code/Dockerfile`](claude-code
 
 All installed files contain a `#ddev-generated` marker. As long as you don't modify them, `ddev add-on get` can update them on a later install. If you edit a file, DDEV will leave your version in place.
 
-* **Change which plugins are installed:** edit the `PLUGINS`/`MARKETPLACES` arrays in `config.claude.yaml`.
+* **Change which plugins are installed (recommended):** create a `.ddev/claude-plugins.json` file — see below. This is preferred over editing `config.claude.yaml`, because it isn't `#ddev-generated` and so survives add-on updates.
 * **Pin a specific Claude version:** change `:latest` to `:<version>` in `web-build/Dockerfile.claude` and `ddev restart`.
+
+### Marketplaces & plugins via JSON
+
+The add-on ships `.ddev/claude-plugins.example.json`. Copy it to `.ddev/claude-plugins.json` and edit it:
+
+```json
+{
+  "marketplaces": [
+    "https://github.com/anthropics/claude-plugins-official"
+  ],
+  "plugins": [
+    "context7@claude-plugins-official",
+    "php-lsp@claude-plugins-official"
+  ]
+}
+```
+
+* `marketplaces` — marketplace URLs to add.
+* `plugins` — `plugin@marketplace` IDs to install.
+
+On each `ddev start` the `post-start` hook checks whether `.ddev/claude-plugins.json` exists **before** processing it:
+
+* **Present and valid:** the file **fully replaces** the built-in defaults — only its marketplaces/plugins are installed.
+* **Absent:** the built-in defaults are installed (backward compatible).
+* **Present but invalid JSON:** a warning is printed and the defaults are used (the hook does not abort).
+
+Your `.ddev/claude-plugins.json` is yours — it carries no `#ddev-generated` marker, so `ddev add-on get` never overwrites it.
 
 ## Removal
 

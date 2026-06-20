@@ -23,6 +23,7 @@ hooks:
         ln -s "/usr/local/bin/claude" "${HOME}/.local/bin/claude"
         export PATH="${HOME}/.local/bin:${PATH}"
 
+        # Defaults -- used when no user JSON exists.
         MARKETPLACES=(
             "https://github.com/anthropics/claude-plugins-official"
         )
@@ -34,6 +35,22 @@ hooks:
             "code-review@claude-plugins-official"
             "security-guidance@claude-plugins-official"
         )
+
+        # Optional per-project override. DDEV mounts .ddev as /mnt/ddev_config in the
+        # web container. If .ddev/claude-plugins.json exists it FULLY REPLACES the
+        # defaults above. See .ddev/claude-plugins.example.json for the format.
+        PLUGINS_CONFIG="/mnt/ddev_config/claude-plugins.json"
+        if [ -f "$PLUGINS_CONFIG" ]; then
+            if jq -e . "$PLUGINS_CONFIG" >/dev/null 2>&1; then
+                MARKETPLACES=()
+                PLUGINS=()
+                while IFS= read -r line; do MARKETPLACES+=("$line"); done < <(jq -r '.marketplaces[]? // empty' "$PLUGINS_CONFIG")
+                while IFS= read -r line; do PLUGINS+=("$line"); done < <(jq -r '.plugins[]? // empty' "$PLUGINS_CONFIG")
+                echo "Claude: using marketplaces/plugins from .ddev/claude-plugins.json"
+            else
+                echo "Claude: .ddev/claude-plugins.json is not valid JSON; falling back to defaults." >&2
+            fi
+        fi
 
         INSTALLED_PLUGINS=$(claude plugin list --json)
         INSTALLED_MARKETPLACES=$(claude plugin marketplace list --json)

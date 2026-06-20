@@ -1,0 +1,13 @@
+{
+  "_comment": "#ddev-generated — Example. Copy this file to .ddev/claude-plugins.json and edit it to customize the Claude Code marketplaces and plugins installed on `ddev start`. The copy is yours (no #ddev-generated marker), so it survives add-on updates. When .ddev/claude-plugins.json exists it fully replaces the built-in defaults.",
+  "marketplaces": [
+    "https://github.com/anthropics/claude-plugins-official"
+  ],
+  "plugins": [
+    "context7@claude-plugins-official",
+    "php-lsp@claude-plugins-official",
+    "code-simplifier@claude-plugins-official",
+    "code-review@claude-plugins-official",
+    "security-guidance@claude-plugins-official"
+  ]
+}
