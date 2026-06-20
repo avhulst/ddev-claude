@@ -1,24 +1,36 @@
 #ddev-generated
 # Claude Code auth + state persistence.
 #
-# Credentials and state live in DDEV's global cache volume
-# (/mnt/ddev-global-cache), which survives `ddev restart`, `ddev rebuild`,
-# `ddev poweroff` and even `ddev delete` -- so you log in once and it sticks,
-# stays out of Mutagen sync, and never lands in git.
+# Claude Code keeps its entire config + state (settings, credentials, projects/,
+# plugins/, .claude.json) under CLAUDE_CONFIG_DIR. We point it at DDEV's global
+# cache volume (/mnt/ddev-global-cache), which survives `ddev restart`,
+# `ddev rebuild`, `ddev poweroff` and even `ddev delete` -- so you log in once
+# and it sticks, stays out of Mutagen sync, and never lands in git.
 #
-# Default below is a SHARED login across all your projects (one login for
-# everything). To isolate state per project instead, swap "shared" for
-# "${DDEV_PROJECT:-default}".
+# The value below is a SHARED login across all your projects (one login for
+# everything). To isolate state per project instead, change the "shared" path
+# segment to a unique literal name (e.g. your project name). Note: DDEV does NOT
+# expand ${DDEV_PROJECT} inside web_environment, so use a literal name there.
+web_environment:
+  - CLAUDE_CONFIG_DIR=/mnt/ddev-global-cache/claude-code/shared
 hooks:
   post-start:
     - exec: |
         set -eu
-        CC_DIR="/mnt/ddev-global-cache/claude-code/shared"
-        mkdir -p "${CC_DIR}/.claude"
-        [ -f "${CC_DIR}/.claude.json" ] || echo '{}' > "${CC_DIR}/.claude.json"
-        rm -rf "${HOME}/.claude" "${HOME}/.claude.json" 2>/dev/null || true
-        ln -s "${CC_DIR}/.claude.json" "${HOME}/.claude.json"
-        ln -s "${CC_DIR}/.claude" "${HOME}/.claude"
+        # CLAUDE_CONFIG_DIR is provided via web_environment above; fall back to the
+        # same default as a safety net so the hook never aborts under `set -u`.
+        CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-/mnt/ddev-global-cache/claude-code/shared}"
+        mkdir -p "${CLAUDE_CONFIG_DIR}"
+
+        # One-time migration from the previous symlink layout, where state lived in
+        # "${CLAUDE_CONFIG_DIR}/.claude/" (alongside "${CLAUDE_CONFIG_DIR}/.claude.json").
+        # CLAUDE_CONFIG_DIR expects everything flat in that directory, so lift the old
+        # .claude/ contents up one level once. .claude.json is already in place.
+        if [ -d "${CLAUDE_CONFIG_DIR}/.claude" ] && [ ! -e "${CLAUDE_CONFIG_DIR}/.ddev-claude-migrated" ]; then
+            cp -an "${CLAUDE_CONFIG_DIR}/.claude/." "${CLAUDE_CONFIG_DIR}/" 2>/dev/null || true
+            touch "${CLAUDE_CONFIG_DIR}/.ddev-claude-migrated"
+        fi
+
         mkdir -p "${HOME}/.local/bin/"
         ln -s "/usr/local/bin/claude" "${HOME}/.local/bin/claude"
         export PATH="${HOME}/.local/bin:${PATH}"

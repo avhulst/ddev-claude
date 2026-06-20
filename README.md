@@ -108,12 +108,15 @@ If you use Claude Code plugins, cache them once after install:
 * **`web-build/Dockerfile.claude`** — appended to DDEV's web image build. A single `COPY --from=docker.io/zone1987/claude-code:latest` line copies the `claude` binary into `/usr/local/bin/claude`.
 * **`commands/web/claude`** — the `ddev claude` wrapper command. It runs `claude "$@"` inside the web container.
 * **`config.claude.yaml`** — a `post-start` hook that:
-  * Persists Claude's auth and state in DDEV's **global cache volume** (`/mnt/ddev-global-cache/claude-code/shared`). This survives `ddev restart`, `ddev rebuild`, `ddev poweroff` and even `ddev delete`, stays out of Mutagen sync, and never lands in git. The login is **shared across all your projects** by default.
+  * Persists Claude's auth and state by pointing **`CLAUDE_CONFIG_DIR`** (set via `web_environment`) at DDEV's **global cache volume** (`/mnt/ddev-global-cache/claude-code/shared`). Claude keeps its entire config (settings, credentials, `projects/`, `plugins/`, `.claude.json`) in that one directory, which survives `ddev restart`, `ddev rebuild`, `ddev poweroff` and even `ddev delete`, stays out of Mutagen sync, and never lands in git. No symlinks and no destructive `rm -rf` on start. The login is **shared across all your projects** by default.
   * Installs the official Claude Code plugins (`context7`, `php-lsp`, `code-simplifier`, `code-review`, `security-guidance`) from the `claude-plugins-official` marketplace, idempotently. You can override this list per project with a `.ddev/claude-plugins.json` file (see below).
 * **`config.token.local.yaml`** — created on install (gitignored), forwards your OAuth token into the container.
 
 > [!TIP]
-> Want per-project logins instead of one shared login? In `config.claude.yaml`, change the `shared` path segment to `${DDEV_PROJECT:-default}`.
+> Want per-project logins instead of one shared login? In `config.claude.yaml`, change the `shared` path segment in the `CLAUDE_CONFIG_DIR` value to a unique **literal** name (e.g. your project name). DDEV does not expand `${DDEV_PROJECT}` inside `web_environment`, so use a literal name rather than a variable.
+
+> [!NOTE]
+> Upgrading from an earlier version that used symlinks? On the first `ddev restart` after the update, the add-on automatically lifts your existing state from `…/shared/.claude/` up into `…/shared/` (the layout `CLAUDE_CONFIG_DIR` expects). Your login is preserved — no manual steps needed.
 
 ## Configuration & customization
 
