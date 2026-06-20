@@ -46,6 +46,10 @@ health_checks() {
   # The `ddev claude` wrapper command must be installed and reach the binary.
   run ddev claude --version
   assert_success
+
+  # State persistence: CLAUDE_CONFIG_DIR must be set and its directory must exist.
+  run ddev exec 'test -n "$CLAUDE_CONFIG_DIR" && test -d "$CLAUDE_CONFIG_DIR"'
+  assert_success
 }
 
 teardown() {
