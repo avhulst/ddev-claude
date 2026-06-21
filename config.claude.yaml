@@ -36,7 +36,7 @@ hooks:
         export PATH="${HOME}/.local/bin:${PATH}"
 
         [ -e ~/.claude ] && mv ~/.claude ~/.claude.bak
-        ln -s /mnt/ddev-global-cache/claude-code/shared ~/.claude
+        ln -s "${CLAUDE_CONFIG_DIR}" ~/.claude
 
         # Defaults -- used when no user JSON exists.
         MARKETPLACES=(
