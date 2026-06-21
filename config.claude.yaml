@@ -35,6 +35,9 @@ hooks:
         ln -s "/usr/local/bin/claude" "${HOME}/.local/bin/claude"
         export PATH="${HOME}/.local/bin:${PATH}"
 
+        [ -e ~/.claude ] && mv ~/.claude ~/.claude.bak
+        ln -s "${CLAUDE_CONFIG_DIR}" ~/.claude
+
         # Defaults -- used when no user JSON exists.
         MARKETPLACES=(
             "https://github.com/anthropics/claude-plugins-official"
