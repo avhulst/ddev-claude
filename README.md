@@ -157,14 +157,19 @@ Your `.ddev/claude-plugins.json` is yours — it carries no `#ddev-generated` ma
 
 ### Interactive `claude` shows `401 Invalid authentication credentials` / "Please run /login", but `claude -p` works
 
-A stale `.credentials.json` from a previous interactive login can persist in the global cache volume and override your `CLAUDE_CODE_OAUTH_TOKEN`. The add-on moves such a file aside automatically on `ddev start` when a token is set; if you still hit it, remove it manually and restart:
+A stale `.credentials.json` from a previous interactive `/login` can persist in the global cache volume (`$CLAUDE_CONFIG_DIR`) and override your `CLAUDE_CODE_OAUTH_TOKEN`. The headless path (`claude -p`) uses the env token directly and is unaffected, which is why only interactive mode breaks — even though `/status` reports `Auth token: CLAUDE_CODE_OAUTH_TOKEN`.
+
+Remove the stale credential and start a fresh session:
 
 ```bash
-ddev ssh
+# inside the web container (ddev ssh, or run via: ddev exec ...)
 rm "$CLAUDE_CONFIG_DIR/.credentials.json"
 ```
 
-Then run `ddev claude` again.
+Then run `ddev claude` again — interactive Claude now falls back to your `CLAUDE_CODE_OAUTH_TOKEN`.
+
+> [!TIP]
+> Want to keep a backup instead of deleting it? Move it aside with `mv "$CLAUDE_CONFIG_DIR/.credentials.json" "$CLAUDE_CONFIG_DIR/.credentials.json.bak"`.
 
 ## Removal
 
