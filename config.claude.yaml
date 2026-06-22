@@ -22,6 +22,17 @@ hooks:
         CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-/mnt/ddev-global-cache/claude-code/shared}"
         mkdir -p "${CLAUDE_CONFIG_DIR}"
 
+        # If an OAuth token is provided via the environment, a stale .credentials.json
+        # from a previous interactive /login (persisted on the global-cache volume) would
+        # override it and cause interactive `claude` to fail with 401. Move it aside so the
+        # env token always wins. Non-destructive: kept as a timestamped .bak. (see issue #7)
+        if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -f "${CLAUDE_CONFIG_DIR}/.credentials.json" ]; then
+            BAK="${CLAUDE_CONFIG_DIR}/.credentials.json.bak"
+            [ -e "$BAK" ] && BAK="${BAK}.$(date +%s)"
+            mv "${CLAUDE_CONFIG_DIR}/.credentials.json" "$BAK"
+            echo "Claude: moved stale .credentials.json aside ($BAK); using CLAUDE_CODE_OAUTH_TOKEN."
+        fi
+
         # One-time migration from the previous symlink layout, where state lived in
         # "${CLAUDE_CONFIG_DIR}/.claude/" (alongside "${CLAUDE_CONFIG_DIR}/.claude.json").
         # CLAUDE_CONFIG_DIR expects everything flat in that directory, so lift the old
